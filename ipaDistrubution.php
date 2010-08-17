@@ -59,7 +59,7 @@ class ipaDistrubution {
     */
     public function __construct($ipa){ 
     	$this->baseurl = "http".((!empty($_SERVER['HTTPS'])) ? "s" : "")."://".$_SERVER['SERVER_NAME'];
-		$this->basedir = dirname($_SERVER['REQUEST_URI'])."/"; 
+		$this->basedir = (strpos($_SERVER['REQUEST_URI'],".php")===false?$_SERVER['REQUEST_URI']:dirname($_SERVER['REQUEST_URI'])."/"); 
 		
 		$this->makeDir(basename($ipa, ".ipa"));
 		

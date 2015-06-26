@@ -209,16 +209,12 @@ class ipaDistrubution {
 							'.(file_exists($this->folder.'/itunes.png')?'<dict>
 								<key>kind</key>
 								<string>full-size-image</string>
-								<key>needs-shine</key>
-								<false/>
 								<key>url</key>
 								<string>'.$this->baseurl.$this->basedir.$this->folder.'/itunes.png</string>
 							</dict>':'').'
 							'.(file_exists($this->folder.'/icon.png')?'<dict>
 								<key>kind</key>
 								<string>display-image</string>
-								<key>needs-shine</key>
-								<false/>
 								<key>url</key>
 								<string>'.$this->baseurl.$this->basedir.$this->folder.'/'.($this->icon==null?'icon.png':$this->icon).'</string>
 							</dict>':'').'

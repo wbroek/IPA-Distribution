@@ -7,6 +7,8 @@
  
  * @author Wouter van den Broek <wvb@webstate.nl>
  */
+
+use CFPropertyList\CFPropertyList as CFPropertyList;
  
 class ipaDistrubution { 
 	
@@ -117,23 +119,21 @@ class ipaDistrubution {
 	}
 	
 	/**
-    * Create the icon (if not in IPA) and itunes artwork from the original iTunesArtwork
+    * Create the icon and itunes artwork from the original iTunesArtwork
     */
 	function makeImages () {
-		if (function_exists("ImageCreateFromJPEG")) {
-			$im = @ImageCreateFromJPEG ($this->itunesartwork);
+		if (function_exists("imagecreatefrompng")) {
+			$im = @imagecreatefrompng ($this->itunesartwork);
 			$x = @getimagesize($this->itunesartwork);
 			$iTunesfile = @ImageCreateTrueColor (512, 512);
 			@ImageCopyResampled ($iTunesfile, $im, 0, 0, 0, 0, 512, 512, $x[0], $x[1]);
 			@ImagePNG($iTunesfile,$this->folder."/itunes.png",0);
 			@ImageDestroy($iTunesfile);
-			if ($this->icon==null) {
-				$iconfile = @ImageCreateTrueColor (57, 57);
-				@ImageCopyResampled ($iconfile, $im, 0, 0, 0, 0, 57, 57, $x[0], $x[1]);
-				@ImagePNG($iconfile,$this->folder."/icon.png",0);
-				@ImageDestroy($iconfile);
-				$this->appicon = $this->folder."/icon.png";
-			}
+			$iconfile = @ImageCreateTrueColor (57, 57);
+			@ImageCopyResampled ($iconfile, $im, 0, 0, 0, 0, 57, 57, $x[0], $x[1]);
+			@ImagePNG($iconfile,$this->folder."/icon.png",0);
+			@ImageDestroy($iconfile);
+			$this->appicon = $this->folder."/icon.png";
 		}
 	}
 	
@@ -174,11 +174,22 @@ class ipaDistrubution {
 
 			$plist = new CFPropertyList('Info.plist');
 			$plistArray = $plist->toArray();
+			echo "<pre>";
+			print_r($plistArray);
+			echo "</pre>";
 			//var_dump($plistArray);
 			$this->identiefier = $plistArray['CFBundleIdentifier'];
-			$this->appname = $plistArray['CFBundleDisplayName'];
-			$this->icon = ($plistArray['CFBundleIconFile']!=""?$plistArray['CFBundleIconFile']:(count($plistArray['CFBundleIconFile'])>0?$plistArray['CFBundleIconFile'][0]:null));
+			if (isset($plistArray['CFBundleDisplayName'])) {
+				$this->appname = $plistArray['CFBundleDisplayName'];
+			} else {
+				$this->appname = $plistArray['CFBundleName'];
+			}
+			// $this->icon = ($plistArray['CFBundleIconFile']!=""?$plistArray['CFBundleIconFile']:(count($plistArray['CFBundleIconFile'])>0?$plistArray['CFBundleIconFile'][0]:null));
 			
+			if (isset($plistArray['CFBundleIcons']['CFBundlePrimaryIcon']['CFBundleIconFiles'])) {
+				$icons = $plistArray['CFBundleIcons']['CFBundlePrimaryIcon']['CFBundleIconFiles'];
+				$this->icon = $icons[count($icons) - 1] . '@2x.png';
+			}
 			
 			$manifest = '<?xml version="1.0" encoding="UTF-8"?>
 			<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -221,7 +232,7 @@ class ipaDistrubution {
 							<key>kind</key>
 							<string>software</string>
 							<key>title</key>
-							<string>'.$plistArray['CFBundleDisplayName'].'</string>
+							<string>' . $this->appname . '</string>
 						</dict>
 					</dict>
 				</array>

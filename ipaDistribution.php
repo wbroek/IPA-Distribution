@@ -174,9 +174,6 @@ class ipaDistribution {
 
 			$plist = new CFPropertyList('Info.plist');
 			$plistArray = $plist->toArray();
-			echo "<pre>";
-			print_r($plistArray);
-			echo "</pre>";
 			//var_dump($plistArray);
 			$this->identiefier = $plistArray['CFBundleIdentifier'];
 			if (isset($plistArray['CFBundleDisplayName'])) {

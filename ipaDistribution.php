@@ -10,7 +10,7 @@
 
 use CFPropertyList\CFPropertyList as CFPropertyList;
  
-class ipaDistrubution { 
+class ipaDistribution { 
 	
 	/**
     * The base url of the script.

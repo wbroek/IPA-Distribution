@@ -18,9 +18,9 @@
 		<h1>Applications</h1>
 	</div>
 <?
-include('../ipaDistrubution.php');
+include('../ipaDistribution.php');
 foreach (glob("*.ipa") as $filename) {
-$ipa = new ipaDistrubution($filename);
+$ipa = new ipaDistribution($filename);
 	if ($ipa->appname!=""&&$ipa->applink!="") {
 ?>	
 	<ul>
@@ -33,7 +33,7 @@ $ipa = new ipaDistrubution($filename);
 }
 ?>
 	
-<p><strong>Example for ipaDistrubution class</strong><br />this example is made by Wouter van den Broek, CSS from UiUIKit Framework</p>
+<p><strong>Example for ipaDistribution class</strong><br />this example is made by Wouter van den Broek, CSS from UiUIKit Framework</p>
 	
 </body>
 </html>

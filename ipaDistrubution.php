@@ -192,48 +192,48 @@ class ipaDistrubution {
 			}
 			
 			$manifest = '<?xml version="1.0" encoding="UTF-8"?>
-			<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-			<plist version="1.0">
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>items</key>
+	<array>
+		<dict>
+			<key>assets</key>
+			<array>
+				<dict>
+					<key>kind</key>
+					<string>software-package</string>
+					<key>url</key>
+					<string>'.$this->baseurl.$this->basedir.$ipa.'</string>
+				</dict>
+				'.(file_exists($this->folder.'/itunes.png')?'<dict>
+					<key>kind</key>
+					<string>full-size-image</string>
+					<key>url</key>
+					<string>'.$this->baseurl.$this->basedir.$this->folder.'/itunes.png</string>
+				</dict>':'').'
+				'.(file_exists($this->folder.'/icon.png')?'<dict>
+					<key>kind</key>
+					<string>display-image</string>
+					<key>url</key>
+					<string>'.$this->baseurl.$this->basedir.$this->folder.'/'.($this->icon==null?'icon.png':$this->icon).'</string>
+				</dict>':'').'
+			</array>
+			<key>metadata</key>
 			<dict>
-				<key>items</key>
-				<array>
-					<dict>
-						<key>assets</key>
-						<array>
-							<dict>
-								<key>kind</key>
-								<string>software-package</string>
-								<key>url</key>
-								<string>'.$this->baseurl.$this->basedir.$ipa.'</string>
-							</dict>
-							'.(file_exists($this->folder.'/itunes.png')?'<dict>
-								<key>kind</key>
-								<string>full-size-image</string>
-								<key>url</key>
-								<string>'.$this->baseurl.$this->basedir.$this->folder.'/itunes.png</string>
-							</dict>':'').'
-							'.(file_exists($this->folder.'/icon.png')?'<dict>
-								<key>kind</key>
-								<string>display-image</string>
-								<key>url</key>
-								<string>'.$this->baseurl.$this->basedir.$this->folder.'/'.($this->icon==null?'icon.png':$this->icon).'</string>
-							</dict>':'').'
-						</array>
-						<key>metadata</key>
-						<dict>
-							<key>bundle-identifier</key>
-							<string>'.$plistArray['CFBundleIdentifier'].'</string>
-							<key>bundle-version</key>
-							<string>'.$plistArray['CFBundleVersion'].'</string>
-							<key>kind</key>
-							<string>software</string>
-							<key>title</key>
-							<string>' . $this->appname . '</string>
-						</dict>
-					</dict>
-				</array>
+				<key>bundle-identifier</key>
+				<string>'.$plistArray['CFBundleIdentifier'].'</string>
+				<key>bundle-version</key>
+				<string>'.$plistArray['CFBundleVersion'].'</string>
+				<key>kind</key>
+				<string>software</string>
+				<key>title</key>
+				<string>' . $this->appname . '</string>
 			</dict>
-			</plist>';
+		</dict>
+	</array>
+</dict>
+</plist>';
 				
 			if (file_put_contents($this->folder."/".basename($ipa, ".ipa").".plist",$manifest)) $this->applink = $this->applink.$this->baseurl.$this->basedir.$this->folder."/".basename($ipa, ".ipa").".plist";
 			else die("Wireless manifest file could not be created !?! Is the folder ".$this->folder." writable?");

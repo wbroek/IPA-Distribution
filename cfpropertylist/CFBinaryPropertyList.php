@@ -7,6 +7,7 @@
  * @package plist
  * @version $Id$
  */
+namespace CFPropertyList;
 
 /**
  * Facility for reading and writing binary PropertyLists. Ported from {@link http://www.opensource.apple.com/source/CF/CF-476.15/CFBinaryPList.c CFBinaryPList.c}.
@@ -123,8 +124,8 @@ abstract class CFBinaryPropertyList {
     if(function_exists("bcmul")) return bcadd(bcmul($hi,"4294967296"), $lo);
 
     if(class_exists('Math_BigInteger')) {
-      $bi = new Math_BigInteger($hi);
-      return $bi->multiply("4294967296")->add($lo)->toString();
+      $bi = new \Math_BigInteger($hi);
+      return $bi->multiply(new \Math_BigInteger("4294967296"))->add(new \Math_BigInteger($lo))->toString();
     }
 
     throw new PListException("either gmp or bc has to be installed, or the Math_BigInteger has to be available!");
@@ -334,11 +335,11 @@ abstract class CFBinaryPropertyList {
       if(strlen($buff = substr($this->content, $this->pos, $length * $this->objectRefSize)) != $length * $this->objectRefSize) throw IOException::readError("");
       $this->pos += $length * $this->objectRefSize;
 
-      $objects = unpack($this->objectRefSize == 1 ? "C*" : "n*", $buff);
+      $objects = self::unpackWithSize($this->objectRefSize, $buff);
 
       // now: read objects
       for($i=0;$i<$length;++$i) {
-        $object = $this->readBinaryObjectAt($objects[$i+1]+1,$this->objectRefSize);
+        $object = $this->readBinaryObjectAt($objects[$i+1]+1);
         $ary->add($object);
       }
     }
@@ -359,12 +360,12 @@ abstract class CFBinaryPropertyList {
     if($length != 0) {
       if(strlen($buff = substr($this->content, $this->pos, $length * $this->objectRefSize)) != $length * $this->objectRefSize) throw IOException::readError("");
       $this->pos += $length * $this->objectRefSize;
-      $keys = unpack(($this->objectRefSize == 1 ? "C*" : "n*"), $buff);
+      $keys = self::unpackWithSize($this->objectRefSize, $buff);
 
       // second: read object refs
       if(strlen($buff = substr($this->content, $this->pos, $length * $this->objectRefSize)) != $length * $this->objectRefSize) throw IOException::readError("");
       $this->pos += $length * $this->objectRefSize;
-      $objects = unpack(($this->objectRefSize == 1 ? "C*" : "n*"), $buff);
+      $objects = self::unpackWithSize($this->objectRefSize, $buff);
 
       // read real keys and objects
       for($i=0;$i<$length;++$i) {
@@ -421,6 +422,10 @@ abstract class CFBinaryPropertyList {
       case '6': // unicode string (utf16be)
         $retval = $this->readBinaryUnicodeString($object_length);
         break;
+      case '8':
+        $num = $this->readBinaryInt($object_length);
+        $retval = new CFUid($num->getValue());
+        break;
       case 'a': // array
         $retval = $this->readBinaryArray($object_length);
         break;
@@ -464,6 +469,10 @@ abstract class CFBinaryPropertyList {
     // first, we read the trailer: 32 byte from the end
     $buff = substr($this->content,-32);
 
+    if(strlen($buff) < 32) {
+      throw new PListException('Error in PList format: content is less than at least necessary 32 bytes!');
+    }
+
     $infos = unpack("x6/Coffset_size/Cobject_ref_size/x4/Nnumber_of_objects/x4/Ntop_object/x4/Ntable_offset",$buff);
 
     // after that, get the offset table
@@ -499,7 +508,10 @@ abstract class CFBinaryPropertyList {
    * @throws IOException if read error occurs
    */
   function readBinaryStream($stream) {
-    $str = stream_get_contents($stream);
+    if(($str = stream_get_contents($stream)) === false || empty($str)) {
+      throw new PListException("Error reading stream!");
+    }
+
     $this->parseBinary($str);
   }
 
@@ -510,7 +522,18 @@ abstract class CFBinaryPropertyList {
    * @throws IOException if read error occurs
    */
   function parseBinary($content=NULL) {
-    if($content !== NULL) $this->content = $content;
+    if($content !== NULL) {
+      $this->content = $content;
+    }
+
+    if(empty($this->content)) {
+      throw new PListException("Content may not be empty!");
+    }
+
+    if(substr($this->content,0,8) != 'bplist00') {
+      throw new PListException("Invalid binary string!");
+    }
+
     $this->pos = 0;
 
     $this->parseBinaryString();
@@ -523,7 +546,10 @@ abstract class CFBinaryPropertyList {
    * @throws IOException if read error occurs
    */
   function readBinary($file) {
-    if(!($fd = fopen($file,"rb"))) throw new IOException("Could not open file {$file}!");
+    if(!($fd = fopen($file,"rb"))) {
+      throw new IOException("Could not open file {$file}!");
+    }
+
     $this->readBinaryStream($fd);
     fclose($fd);
   }
@@ -562,16 +588,29 @@ abstract class CFBinaryPropertyList {
   /**
    * „pack” a value (i.e. write the binary representation as big endian to a string) with the specified size
    * @param integer $nbytes The number of bytes to pack
-   * @param integer $int the integer value to pack
+   * @param integer $int The integer value to pack
    * @return string The packed value as string
    */
   public static function packItWithSize($nbytes,$int) {
     $formats = Array("C", "n", "N", "N");
     $format = $formats[$nbytes-1];
-    $ret = '';
 
     if($nbytes == 3) return substr(pack($format, $int), -3);
     return pack($format, $int);
+  }
+
+  /**
+   * „unpack” multiple values of the specified size (i.e. get the integers from their binary representation) from a string
+   * @param integer $nbytes The number of bytes of each value to unpack
+   * @param integer $buff The string packed with integer values
+   * @return array The unpacked integers
+   */
+  public static function unpackWithSize($nbytes,$buff) {
+    $formats = Array("C*", "n*", "N*", "N*");
+    $format = $formats[$nbytes-1];
+
+    if($nbytes == 3) $buff = "\0" . implode("\0", str_split($buff, 3));
+    return unpack($format, $buff);
   }
 
   /**
@@ -857,6 +896,49 @@ abstract class CFBinaryPropertyList {
     return $bdata.strrev(pack("d", (float)$val));
   }
 
+  public function uidToBinary($value) {
+    $saved_object_count = $this->writtenObjectCount++;
+
+    $val = "";
+
+    $nbytes = 0;
+    if($value > 0xFF) $nbytes = 1; // 1 byte integer
+    if($value > 0xFFFF) $nbytes += 1; // 4 byte integer
+    if($value > 0xFFFFFFFF) $nbytes += 1; // 8 byte integer
+    if($value < 0) $nbytes = 3; // 8 byte integer, since signed
+
+    $bdata = self::typeBytes("1000", $nbytes); // 1 is 0001, type indicator for integer
+    $buff = "";
+
+    if($nbytes < 3) {
+      if($nbytes == 0) $fmt = "C";
+      elseif($nbytes == 1) $fmt = "n";
+      else $fmt = "N";
+
+      $buff = pack($fmt, $value);
+    }
+    else {
+      if(PHP_INT_SIZE > 4) {
+        // 64 bit signed integer; we need the higher and the lower 32 bit of the value
+        $high_word = $value >> 32;
+        $low_word = $value & 0xFFFFFFFF;
+      }
+      else {
+        // since PHP can only handle 32bit signed, we can only get 32bit signed values at this point - values above 0x7FFFFFFF are
+        // floats. So we ignore the existance of 64bit on non-64bit-machines
+        if($value < 0) $high_word = 0xFFFFFFFF;
+        else $high_word = 0;
+        $low_word = $value;
+      }
+      $buff = pack("N", $high_word).pack("N", $low_word);
+    }
+
+    $val = $bdata.$buff;
+
+    $this->objectTable[$saved_object_count] = $val;
+    return $saved_object_count;
+  }
+
   /**
    * Converts a numeric value to binary and adds it to the object table
    * @param numeric $value The numeric value
@@ -966,5 +1048,4 @@ abstract class CFBinaryPropertyList {
 
 }
 
-
-?>
+# eof

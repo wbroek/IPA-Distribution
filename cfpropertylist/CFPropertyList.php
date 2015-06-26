@@ -12,17 +12,20 @@
  * @example example-create-01.php Using the CFPropertyList API
  * @example example-create-02.php Using {@link CFTypeDetector}
  * @example example-create-03.php Using {@link CFTypeDetector} with {@link CFDate} and {@link CFData}
+ * @example example-modify-01.php Read, modify and save a PropertyList
  */
+
+namespace CFPropertyList;
+use \Iterator, \DOMDocument, \DOMException, DOMImplementation, DOMNode;
 
 /**
  * Require IOException, PListException, CFType and CFBinaryPropertyList
  */
-$plistDirectory = dirname(__FILE__);
-require_once($plistDirectory.'/IOException.php');
-require_once($plistDirectory.'/PListException.php');
-require_once($plistDirectory.'/CFType.php');
-require_once($plistDirectory.'/CFBinaryPropertyList.php');
-require_once($plistDirectory.'/CFTypeDetector.php');
+require_once(__DIR__.'/IOException.php');
+require_once(__DIR__.'/PListException.php');
+require_once(__DIR__.'/CFType.php');
+require_once(__DIR__.'/CFBinaryPropertyList.php');
+require_once(__DIR__.'/CFTypeDetector.php');
 
 /**
  * Property List
@@ -62,6 +65,12 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
    * @var string
    */
   protected $file = null;
+  
+  /**
+   * Detected format of PropertyList
+   * @var integer
+   */
+  protected $detectedFormat = null;
 
   /**
    * Path of PropertyList
@@ -92,15 +101,15 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
    * @var array
    */
   protected static $types = array(
-    'string' => 'CFString',
-    'real' => 'CFNumber',
+    'string'  => 'CFString',
+    'real'    => 'CFNumber',
     'integer' => 'CFNumber',
-    'date' => 'CFDate',
-    'true' => 'CFBoolean',
-    'false' => 'CFBoolean',
-    'data' => 'CFData',
-    'array' => 'CFArray',
-    'dict' => 'CFDictionary'
+    'date'    => 'CFDate',
+    'true'    => 'CFBoolean',
+    'false'   => 'CFBoolean',
+    'data'    => 'CFData',
+    'array'   => 'CFArray',
+    'dict'    => 'CFDictionary'
  );
 
 
@@ -116,12 +125,13 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
   public function __construct($file=null,$format=self::FORMAT_AUTO) {
     $this->file = $file;
     $this->format = $format;
+    $this->detectedFormat = $format;
     if($this->file) $this->load();
   }
 
   /**
    * Load an XML PropertyList.
-   * @param string $file Path of PropertyList, defaults to {@link $file} 
+   * @param string $file Path of PropertyList, defaults to {@link $file}
    * @return void
    * @throws IOException if file could not be read
    * @throws DOMException if XML-file could not be read properly
@@ -140,12 +150,12 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
    */
   public function loadXMLStream($stream) {
     if(($contents = stream_get_contents($stream)) === FALSE) throw IOException::notReadable('<stream>');
-    $this->parse($content,CFPropertyList::FORMAT_XML);
+    $this->parse($contents,CFPropertyList::FORMAT_XML);
   }
 
   /**
    * Load an binary PropertyList.
-   * @param string $file Path of PropertyList, defaults to {@link $file} 
+   * @param string $file Path of PropertyList, defaults to {@link $file}
    * @return void
    * @throws IOException if file could not be read
    * @throws PListException if binary plist-file could not be read properly
@@ -165,7 +175,7 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
    */
   public function loadBinaryStream($stream) {
     if(($contents = stream_get_contents($stream)) === FALSE) throw IOException::notReadable('<stream>');
-    $this->parse($content,CFPropertyList::FORMAT_BINARY);
+    $this->parse($contents,CFPropertyList::FORMAT_BINARY);
   }
 
   /**
@@ -202,9 +212,11 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
 
         if($filetype == "bplist") {
           if($version != "00") throw new PListException("Wrong file format version! Expected 00, got $version!");
+          $this->detectedFormat = CFPropertyList::FORMAT_BINARY;
           $this->readBinary($file);
           break;
         }
+        $this->detectedFormat = CFPropertyList::FORMAT_XML;
         // else: xml format, break not neccessary
       case CFPropertyList::FORMAT_XML:
         $doc = new DOMDocument();
@@ -244,13 +256,15 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
 
         if($filetype == "bplist") {
           if($version != "00") throw new PListException("Wrong file format version! Expected 00, got $version!");
+          $this->detectedFormat = CFPropertyList::FORMAT_BINARY;
           $this->parseBinary($str);
           break;
         }
+        $this->detectedFormat = CFPropertyList::FORMAT_XML;
         // else: xml format, break not neccessary
       case CFPropertyList::FORMAT_XML:
         $doc = new DOMDocument();
-        if(!$doc->load($str)) throw new DOMException();
+        if(!$doc->loadXML($str)) throw new DOMException();
         $this->import($doc->documentElement, $this);
         break;
     }
@@ -259,7 +273,7 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
   /**
    * Convert a DOMNode into a CFType.
    * @param DOMNode $node Node to import children of
-   * @param CFDictionary|CFArray|CFPropertyList $parent 
+   * @param CFDictionary|CFArray|CFPropertyList $parent
    * @return void
    */
   protected function import(DOMNode $node, $parent) {
@@ -270,7 +284,7 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
       // skip if we can't handle the element
       if(!isset(self::$types[$n->nodeName])) continue;
 
-      $class = self::$types[$n->nodeName];
+      $class = 'CFPropertyList\\'.self::$types[$n->nodeName];
       $key = null;
 
       // find previous <key> if possible
@@ -305,6 +319,14 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
         case 'dict':
           $value = new $class();
           $this->import($n, $value);
+
+          if($value instanceof CFDictionary) {
+            $hsh = $value->getValue();
+            if(isset($hsh['CF$UID']) && count($hsh) == 1) {
+              $value = new CFUid($hsh['CF$UID']->getValue());
+            }
+          }
+
           break;
       }
 
@@ -317,7 +339,7 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
 
   /**
    * Convert CFPropertyList to XML and save to file.
-   * @param string $file Path of PropertyList, defaults to {@link $file} 
+   * @param string $file Path of PropertyList, defaults to {@link $file}
    * @return void
    * @throws IOException if file could not be read
    * @uses $file if $file was not specified
@@ -328,7 +350,7 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
 
   /**
    * Convert CFPropertyList to binary format (bplist00) and save to file.
-   * @param string $file Path of PropertyList, defaults to {@link $file} 
+   * @param string $file Path of PropertyList, defaults to {@link $file}
    * @return void
    * @throws IOException if file could not be read
    * @uses $file if $file was not specified
@@ -339,7 +361,7 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
 
   /**
    * Convert CFPropertyList to XML or binary and save to file.
-   * @param string $file Path of PropertyList, defaults to {@link $file} 
+   * @param string $file Path of PropertyList, defaults to {@link $file}
    * @param string $format Format of PropertyList, defaults to {@link $format}
    * @return void
    * @throws IOException if file could not be read
@@ -350,6 +372,7 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
   public function save($file=null,$format=null) {
     $file = $file ? $file : $this->file;
     $format = $format ? $format : $this->format;
+    if($format == self::FORMAT_AUTO)$format = $this->detectedFormat;
 
     if( !in_array( $format, array( self::FORMAT_BINARY, self::FORMAT_XML ) ) )
       throw new PListException( "format {$format} is not supported, use CFPropertyList::FORMAT_BINARY or CFPropertyList::FORMAT_XML" );
@@ -375,7 +398,7 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
   public function toXML($formatted=false) {
     $domimpl = new DOMImplementation();
     // <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-    $dtd = $domimpl->createDocumentType('plist', '-//Apple Computer//DTD PLIST 1.0//EN', 'http://www.apple.com/DTDs/PropertyList-1.0.dtd');
+    $dtd = $domimpl->createDocumentType('plist', '-//Apple//DTD PLIST 1.0//EN', 'http://www.apple.com/DTDs/PropertyList-1.0.dtd');
     $doc = $domimpl->createDocument(null, "plist", $dtd);
     $doc->encoding = "UTF-8";
 
@@ -424,10 +447,10 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
     if(isset($this->value[$key])) return $this->value[$key];
     return null;
   }
-  
+
   /**
    * Generic getter (magic)
-   * 
+   *
    * @param integer $key Key of CFType to retrieve from collection
    * @return CFType CFType found at $key, null else
    * @author Sean Coates <sean@php.net>
@@ -436,7 +459,7 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
   public function __get($key) {
     return $this->get($key);
   }
-  
+
   /**
    * Remove CFType from collection.
    * @param integer $key Key of CFType to removes from collection
@@ -452,7 +475,7 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
 
     return null;
   }
-  
+
   /**
    * Empty the collection
    * @return array the removed CFTypes
@@ -489,16 +512,16 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
    * Create CFType-structure from guessing the data-types.
    * The functionality has been moved to the more flexible {@link CFTypeDetector} facility.
    * @param mixed $value Value to convert to CFType
-   * @param boolean $autoDictionary if true {@link CFArray}-detection is bypassed and arrays will be returned as {@link CFDictionary}.
+   * @param array $options Configuration for casting values [autoDictionary, suppressExceptions, objectToArrayMethod, castNumericStrings]
    * @return CFType CFType based on guessed type
    * @uses CFTypeDetector for actual type detection
    * @deprecated
    */
-  public static function guess($value, $autoDictionary=false) {
+  public static function guess($value, $options=array()) {
     static $t = null;
-    if( $t === null ) 
-      $t = new CFTypeDetector( $autoDictionary );
-      
+    if( $t === null )
+      $t = new CFTypeDetector( $options );
+
     return $t->toCFType( $value );
   }
 
@@ -582,5 +605,4 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
 
 }
 
-
-?>
+# eof

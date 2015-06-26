@@ -8,9 +8,11 @@
  * @subpackage plist.types
  * @version $Id$
  */
+namespace CFPropertyList;
+use \DOMDocument, \Iterator, \ArrayAccess;
 
 /**
- * Base-Class of all CFTypes used by CFPropertyList 
+ * Base-Class of all CFTypes used by CFPropertyList
  * @author Rodney Rehm <rodney.rehm@medialize.de>
  * @author Christian Kruse <cjk@wwwtech.de>
  * @package plist
@@ -38,7 +40,7 @@ abstract class CFType {
   /************************************************************************************************
    *    M A G I C   P R O P E R T I E S
    ************************************************************************************************/
-  
+
   /**
    * Get the CFType's value
    * @return mixed CFType's value
@@ -67,8 +69,8 @@ abstract class CFType {
    * @uses $value as nodeValue
    */
   public function toXML(DOMDocument $doc, $nodeName) {
-    $text = $doc->createTextNode($this->value);
     $node = $doc->createElement($nodeName);
+    $text = $doc->createTextNode($this->value);
     $node->appendChild($text);
     return $node;
   }
@@ -119,6 +121,19 @@ class CFString extends CFType {
   }
 }
 
+class CFUid extends CFType {
+  public
+  function toXML(DOMDocument $doc,$nodeName="") {
+    $obj = new CFDictionary(array('CF$UID' => new CFNumber($this->value)));
+    return $obj->toXml($doc);
+  }
+
+  public
+  function toBinary(CFBinaryPropertyList &$bplist) {
+    return $bplist->uidToBinary($this->value);
+  }
+}
+
 /**
  * Number Type of CFPropertyList
  * @author Rodney Rehm <rodney.rehm@medialize.de>
@@ -132,7 +147,7 @@ class CFNumber extends CFType {
    * Returns &lt;real&gt; if $value is a float, &lt;integer&gt; if $value is an integer.
    * @param DOMDocument $doc DOMDocument to create DOMNode in
    * @param string $nodeName For compatibility reasons; just ignore it
-   * @return DOMNode &lt;real&gt; or &lt;integer&gt;-Element 
+   * @return DOMNode &lt;real&gt; or &lt;integer&gt;-Element
    */
   public function toXML(DOMDocument $doc,$nodeName="") {
     $ret = 'real';
@@ -189,7 +204,7 @@ class CFDate extends CFType {
     if($format == CFDate::TIMESTAMP_UNIX) $this->value = $value;
     else $this->value = $value + CFDate::DATE_DIFF_APPLE_UNIX;
   }
-  
+
   /**
    * Get the Date CFType's value.
    * @param integer $format format the timestamp is specified in, use {@link TIMESTAMP_APPLE} or {@link TIMESTAMP_UNIX}, defaults to {@link TIMESTAMP_UNIX}
@@ -224,7 +239,7 @@ class CFDate extends CFType {
   public function toBinary(CFBinaryPropertyList &$bplist) {
     return $bplist->dateToBinary($this->value);
   }
-  
+
   /**
    * Create a UNIX timestamp from a PList date string
    * @param string $val The date string (e.g. "2009-05-13T20:23:43Z")
@@ -251,7 +266,7 @@ class CFBoolean extends CFType {
    * Returns &lt;true&gt; if $value is a true, &lt;false&gt; if $value is false.
    * @param DOMDocument $doc DOMDocument to create DOMNode in
    * @param string $nodeName For compatibility reasons; just ignore it
-   * @return DOMNode &lt;true&gt; or &lt;false&gt;-Element 
+   * @return DOMNode &lt;true&gt; or &lt;false&gt;-Element
    */
   public function toXML(DOMDocument $doc,$nodeName="") {
     return $doc->createElement($this->value ? 'true' : 'false');
@@ -496,7 +511,7 @@ class CFArray extends CFType implements Iterator, ArrayAccess {
   /************************************************************************************************
    *    ArrayAccess   I N T E R F A C E
    ************************************************************************************************/
-  
+
   /**
    * Determine if the array's key exists
    * @param string $key the key to check
@@ -508,7 +523,7 @@ class CFArray extends CFType implements Iterator, ArrayAccess {
   public function offsetExists($key) {
     return isset($this->value[$key]);
   }
-  
+
   /**
    * Fetch a specific key from the CFArray
    * @param string $key the key to check
@@ -520,7 +535,7 @@ class CFArray extends CFType implements Iterator, ArrayAccess {
   public function offsetGet($key) {
     return $this->get($key);
   }
-  
+
   /**
    * Set a value in the array
    * @param string $key the key to set
@@ -533,7 +548,7 @@ class CFArray extends CFType implements Iterator, ArrayAccess {
   public function offsetSet($key, $value) {
     return $this->setValue($value);
   }
-  
+
   /**
    * Unsets a value in the array
    * <b>Note:</b> this dummy does nothing
@@ -543,10 +558,10 @@ class CFArray extends CFType implements Iterator, ArrayAccess {
    * @author Sean Coates <sean@php.net>
    */
   public function offsetUnset($key) {
-    
+
   }
-  
-  
+
+
 }
 
 /**
@@ -739,4 +754,4 @@ class CFDictionary extends CFType implements Iterator {
 
 }
 
-?>
+# eof

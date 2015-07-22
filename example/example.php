@@ -20,7 +20,7 @@
 <?
 include('../src/IpaDistribution.php');
 foreach (glob("**/*.ipa") as $filename) {
-$ipa = new IpaDistribution($filename);
+$ipa = new Distribution\IpaDistribution($filename);
 	if ($ipa->appname!=""&&$ipa->applink!="") {
 ?>	
 	<ul>

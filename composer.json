@@ -9,8 +9,17 @@
     },
     "authors": [
         {
+            "name": "Wouter van den Broek",
+            "email": "wvb@webstate.nl"
+        },
+        {
             "name": "Lei Mingyu",
             "email": "uygnim.iel@gmail.com"
         }
-    ]
+    ],
+    "autoload": {
+        "psr-0": {
+            "IpaDistribution":".\/"
+        }
+    }
 }

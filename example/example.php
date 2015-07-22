@@ -18,7 +18,7 @@
 		<h1>Applications</h1>
 	</div>
 <?
-include('../IpaDistribution.php');
+include('../src/IpaDistribution.php');
 foreach (glob("**/*.ipa") as $filename) {
 $ipa = new IpaDistribution($filename);
 	if ($ipa->appname!=""&&$ipa->applink!="") {

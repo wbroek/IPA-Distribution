@@ -6,6 +6,8 @@
  * Script needs GD Library (for resizing the images) and CFPropertyList class (http://code.google.com/p/cfpropertylist/)
  * @author Wouter van den Broek <wvb@webstate.nl>
  */
+namespace IpaDistribution;
+
 use CFPropertyList\CFPropertyList;
 
 require_once 'vendor/rodneyrehm/plist/classes/CFPropertyList/CFPropertyList.php';

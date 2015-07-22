@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "bca346952c39578a599dad0524cf5e63",
+    "hash": "430d7b06ba61c6c9a93897039886e883",
     "packages": [
         {
             "name": "rodneyrehm/plist",

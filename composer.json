@@ -1,0 +1,13 @@
+{
+    "name": "root/ipa-distribution",
+    "description": "PHP class that handles the iOS Wireless App Distribution manifest",
+    "require": {
+        "rodneyrehm/plist": "*"
+    },
+    "authors": [
+        {
+            "name": "Lei Mingyu",
+            "email": "uygnim.iel@gmail.com"
+        }
+    ]
+}

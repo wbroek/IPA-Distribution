@@ -1,5 +1,5 @@
 {
-    "name": "root/ipa-distribution",
+    "name": "lozy219/ipa-distribution",
     "description": "PHP class that handles the iOS Wireless App Distribution manifest",
     "require": {
         "rodneyrehm/plist": "*"

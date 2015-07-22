@@ -1,6 +1,9 @@
 {
     "name": "lozy219/ipa-distribution",
     "description": "PHP class that handles the iOS Wireless App Distribution manifest",
+    "keywords": ["ipa", "distribution", "php"],
+    "license": "MIT",
+    "version": "0.0.2",
     "require": {
         "rodneyrehm/plist": "*"
     },

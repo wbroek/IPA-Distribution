@@ -63,7 +63,7 @@ class IpaDistribution {
 		$this->baseurl = "http".((!empty($_SERVER['HTTPS'])) ? "s" : "")."://".$_SERVER['SERVER_NAME'];
 		$this->basedir = (strpos($_SERVER['REQUEST_URI'],".php")===false?$_SERVER['REQUEST_URI']:dirname($_SERVER['REQUEST_URI'])."/");
 		
-		$this->makeDir(basename($ipa, ".ipa"));
+		$this->makeDir(substr($ipa, 0, strlen($ipa) - 4));
 		
 		$this->getPlist($ipa);
 		

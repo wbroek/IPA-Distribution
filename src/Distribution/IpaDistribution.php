@@ -1,4 +1,4 @@
-<?
+<?php
 /**
  * Creates an Manifest from any IPA iPhone application file for iOS Wireless App Distribution.
  * and searches for the right provision profile in the same folder
@@ -9,60 +9,58 @@
 namespace Distribution;
 
 use CFPropertyList\CFPropertyList;
-
-require_once 'vendor/rodneyrehm/plist/classes/CFPropertyList/CFPropertyList.php';
  
 class IpaDistribution { 
 	
 	/**
-    * The base url of the script.
-    */
+	* The base url of the script.
+	*/
 	protected $baseurl;
 	/**
-    * The base folder of the script.
-    */
+	* The base folder of the script.
+	*/
 	protected $basedir;
 	/**
-    * The folder of the app where the manifest will be written.
-    */
+	* The folder of the app where the manifest will be written.
+	*/
 	protected $folder;
 	/**
-    * iTunesArtwork name which is an standard from Apple (http://developer.apple.com/iphone/library/qa/qa2010/qa1686.html).
-    */
+	* iTunesArtwork name which is an standard from Apple (http://developer.apple.com/iphone/library/qa/qa2010/qa1686.html).
+	*/
 	protected $itunesartwork = "iTunesArtwork";
 	/**
-    * App name which can be used for the HTML page.
-    */
+	* App name which can be used for the HTML page.
+	*/
 	public $appname;
 	/**
-    * App ccon which can be used for the HTML page.
-    */
+	* App ccon which can be used for the HTML page.
+	*/
 	public $appicon;
 	/**
-    * The link to the manifest for the iPhone .
-    */
+	* The link to the manifest for the iPhone .
+	*/
 	public $applink = "itms-services://?action=download-manifest&url=";
 	/**
-    * Bundle identifier which is used to find the proper provision profile.
-    */
+	* Bundle identifier which is used to find the proper provision profile.
+	*/
 	protected $identiefier;
 	/**
-    * Bundle icon name for extracting icon file
-    */
+	* Bundle icon name for extracting icon file
+	*/
 	protected $icon;
 	/**
-    * The name of the provision profile for the IPA iPhone application .
-    */
+	* The name of the provision profile for the IPA iPhone application .
+	*/
 	public $provisionprofile;
 	
 	
 	/**
-    * Initialize the IPA and create the Manifest.
-    *
-    * @param String $ipa the IPA file for which an Manifest must be made
-    */
-    public function __construct($ipa) { 
-    	$this->baseurl = "http".((!empty($_SERVER['HTTPS'])) ? "s" : "")."://".$_SERVER['SERVER_NAME'];
+	* Initialize the IPA and create the Manifest.
+	*
+	* @param String $ipa the IPA file for which an Manifest must be made
+	*/
+	public function __construct($ipa) { 
+		$this->baseurl = "http".((!empty($_SERVER['HTTPS'])) ? "s" : "")."://".$_SERVER['SERVER_NAME'];
 		$this->basedir = (strpos($_SERVER['REQUEST_URI'],".php")===false?$_SERVER['REQUEST_URI']:dirname($_SERVER['REQUEST_URI'])."/");
 		
 		$this->makeDir(basename($ipa, ".ipa"));
@@ -80,27 +78,27 @@ class IpaDistribution {
 		}
 
 		$this->cleanUp();
-    } 
-    
-    /**
-    * Make a folder where the Manifest and icon files are held.
-    *
-    * @param String $dirname name of the folder
-    */
-    function makeDir($dirname) {
-    	$this->folder = $dirname;
-    	if (!is_dir($dirname)) {
-    		if (!mkdir($dirname)) {
-    			die('Failed to create folder '.$dirname.'... Is the current folder writeable?');
-    		}
-    	}
+	} 
+	
+	/**
+	* Make a folder where the Manifest and icon files are held.
+	*
+	* @param String $dirname name of the folder
+	*/
+	function makeDir($dirname) {
+		$this->folder = $dirname;
+		if (!is_dir($dirname)) {
+			if (!mkdir($dirname)) {
+				die('Failed to create folder '.$dirname.'... Is the current folder writeable?');
+			}
+		}
 	}
 	
 	/**
-    * Get de Plist and iTunesArtwork from the IPA file
-    *
-    * @param String $ipa the location of the IPA file
-    */
+	* Get de Plist and iTunesArtwork from the IPA file
+	*
+	* @param String $ipa the location of the IPA file
+	*/
 	function getPlist($ipa) {
 		if (is_dir($this->folder)) {
 			$zip = zip_open($ipa);
@@ -123,8 +121,8 @@ class IpaDistribution {
 	}
 	
 	/**
-    * Create the icon and itunes artwork from the original iTunesArtwork
-    */
+	* Create the icon and itunes artwork from the original iTunesArtwork
+	*/
 	function makeImages () {
 		if (function_exists("imagecreatefrompng")) {
 			$im = @imagecreatefrompng ($this->itunesartwork);
@@ -143,24 +141,24 @@ class IpaDistribution {
 	
 	
 	/**
-    * Get the icon file out of the IPA and place it in the right folder
-    */
+	* Get the icon file out of the IPA and place it in the right folder
+	*/
 	function getIcon ($ipa) {
 		if (is_dir($this->folder)) {
 			$zip = zip_open($ipa);
 			if ($zip) {
 			  while ($zip_entry = zip_read($zip)) {
-			    $fileinfo = pathinfo(zip_entry_name($zip_entry));
-			    if ($fileinfo['basename']==$this->icon) {
-			    	$fp = fopen($this->folder.'/'.$fileinfo['basename'], "w");
-			    	if (zip_entry_open($zip, $zip_entry, "r")) {
-				      $buf = zip_entry_read($zip_entry, zip_entry_filesize($zip_entry));
-				      fwrite($fp,"$buf");
-				      zip_entry_close($zip_entry);
-				      fclose($fp);
-				    }
+				$fileinfo = pathinfo(zip_entry_name($zip_entry));
+				if ($fileinfo['basename']==$this->icon) {
+					$fp = fopen($this->folder.'/'.$fileinfo['basename'], "w");
+					if (zip_entry_open($zip, $zip_entry, "r")) {
+					  $buf = zip_entry_read($zip_entry, zip_entry_filesize($zip_entry));
+					  fwrite($fp,"$buf");
+					  zip_entry_close($zip_entry);
+					  fclose($fp);
+					}
 				$this->appicon = $this->folder."/".$this->icon;
-			    }
+				}
 			  }
 			  zip_close($zip);
 			}
@@ -168,10 +166,10 @@ class IpaDistribution {
 	}
 	
 	/**
-    * Parse the Plist and get the values for the creating an Manifest and write the Manifest
-    *
-    * @param String $ipa the location of the IPA file
-    */
+	* Parse the Plist and get the values for the creating an Manifest and write the Manifest
+	*
+	* @param String $ipa the location of the IPA file
+	*/
 	function createManifest ($ipa) {
 			$plist = new CFPropertyList('Info.plist');
 			$plistArray = $plist->toArray();
@@ -241,18 +239,18 @@ class IpaDistribution {
 	}
 	
 	/**
-    * Removes temporary files
-    */
+	* Removes temporary files
+	*/
 	function cleanUp () {
 		if (file_exists($this->itunesartwork)) @unlink($this->itunesartwork);
 		if (file_exists("Info.plist"))  @unlink("Info.plist");
 	}
 	
 	/**
-    * Search for the right provision profile in de current folder
-    *
-    * @param String $identiefier the bundle identifier for the app
-    */
+	* Search for the right provision profile in de current folder
+	*
+	* @param String $identiefier the bundle identifier for the app
+	*/
 	function seekMobileProvision ($identiefier) {
 		$wildcard = pathinfo($identiefier);
 		

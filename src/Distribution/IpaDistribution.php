@@ -61,6 +61,7 @@ class IpaDistribution {
 	*/
 	public function __construct($ipa) { 
 		$this->baseurl = "http".((!empty($_SERVER['HTTPS'])) ? "s" : "")."://".$_SERVER['SERVER_NAME'];
+
 		$this->basedir = (strpos($_SERVER['REQUEST_URI'],".php")===false?$_SERVER['REQUEST_URI']:dirname($_SERVER['REQUEST_URI'])."/");
 		
 		$this->makeDir(substr($ipa, 0, strlen($ipa) - 4));
@@ -186,7 +187,6 @@ class IpaDistribution {
 				$icons = $plistArray['CFBundleIcons']['CFBundlePrimaryIcon']['CFBundleIconFiles'];
 				$this->icon = $icons[count($icons) - 1] . '@2x.png';
 			}
-			
 			$manifest = '<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -200,19 +200,19 @@ class IpaDistribution {
 					<key>kind</key>
 					<string>software-package</string>
 					<key>url</key>
-					<string>'.$this->baseurl.$this->basedir.$ipa.'</string>
+					<string>'.$this->baseurl.'/'.$ipa.'</string>
 				</dict>
 				'.(file_exists($this->folder.'/itunes.png')?'<dict>
 					<key>kind</key>
 					<string>full-size-image</string>
 					<key>url</key>
-					<string>'.$this->baseurl.$this->basedir.$this->folder.'/itunes.png</string>
+					<string>'.$this->baseurl.'/'.$this->folder.'/itunes.png</string>
 				</dict>':'').'
 				'.(file_exists($this->folder.'/icon.png')?'<dict>
 					<key>kind</key>
 					<string>display-image</string>
 					<key>url</key>
-					<string>'.$this->baseurl.$this->basedir.$this->folder.'/'.($this->icon==null?'icon.png':$this->icon).'</string>
+					<string>'.$this->baseurl.'/'. $this->folder.'/'.($this->icon==null?'icon.png':$this->icon).'</string>
 				</dict>':'').'
 			</array>
 			<key>metadata</key>

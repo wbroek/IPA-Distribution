@@ -202,18 +202,18 @@ class IpaDistribution {
 					<key>url</key>
 					<string>'.$this->baseurl.'/'.$ipa.'</string>
 				</dict>
-				'.(file_exists($this->folder.'/itunes.png')?'<dict>
+				<dict>
 					<key>kind</key>
 					<string>full-size-image</string>
 					<key>url</key>
 					<string>'.$this->baseurl.'/'.$this->folder.'/itunes.png</string>
-				</dict>':'').'
-				'.(file_exists($this->folder.'/icon.png')?'<dict>
+				</dict>
+				<dict>
 					<key>kind</key>
 					<string>display-image</string>
 					<key>url</key>
 					<string>'.$this->baseurl.'/'. $this->folder.'/'.($this->icon==null?'icon.png':$this->icon).'</string>
-				</dict>':'').'
+				</dict>
 			</array>
 			<key>metadata</key>
 			<dict>
